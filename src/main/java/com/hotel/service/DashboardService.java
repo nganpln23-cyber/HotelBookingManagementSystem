@@ -1,18 +1,18 @@
 package com.hotel.service;
 
-import com.hotel.dao.DashboardDAO;
+import com.hotel.repository.DashboardRepository;
 import com.hotel.model.DashboardStats;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DashboardService {
-    private final DashboardDAO dashboardDAO;
+    private final DashboardRepository dashboardRepository;
 
-    public DashboardService(DashboardDAO dashboardDAO) {
-        this.dashboardDAO = dashboardDAO;
+    public DashboardService(DashboardRepository dashboardRepository) {
+        this.dashboardRepository = dashboardRepository;
     }
 
     public DashboardStats getStats() {
-        return dashboardDAO.getStats();
+        return dashboardRepository.getStats();
     }
 }

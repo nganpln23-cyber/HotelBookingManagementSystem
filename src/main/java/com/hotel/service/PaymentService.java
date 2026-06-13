@@ -1,7 +1,7 @@
 package com.hotel.service;
 
-import com.hotel.dao.BookingDAO;
-import com.hotel.dao.PaymentDAO;
+import com.hotel.repository.BookingRepository;
+import com.hotel.repository.PaymentRepository;
 import com.hotel.model.Booking;
 import com.hotel.model.Payment;
 import org.springframework.stereotype.Service;
@@ -11,20 +11,20 @@ import java.util.List;
 
 @Service
 public class PaymentService {
-    private final PaymentDAO paymentDAO;
-    private final BookingDAO bookingDAO;
+    private final PaymentRepository paymentRepository;
+    private final BookingRepository bookingRepository;
 
-    public PaymentService(PaymentDAO paymentDAO, BookingDAO bookingDAO) {
-        this.paymentDAO = paymentDAO;
-        this.bookingDAO = bookingDAO;
+    public PaymentService(PaymentRepository paymentRepository, BookingRepository bookingRepository) {
+        this.paymentRepository = paymentRepository;
+        this.bookingRepository = bookingRepository;
     }
 
-    public List<Payment> findAll() { return paymentDAO.findAll(); }
-    public List<Payment> findByBooking(Integer bookingId) { return paymentDAO.findByBookingId(bookingId); }
+    public List<Payment> findAll() { return paymentRepository.findAll(); }
+    public List<Payment> findByBooking(Integer bookingId) { return paymentRepository.findByBookingId(bookingId); }
 
     public BigDecimal getAmountDue(Integer bookingId) {
-        Booking booking = bookingDAO.findById(bookingId);
-        BigDecimal paid = paymentDAO.sumPaidByBooking(bookingId);
+        Booking booking = bookingRepository.findById(bookingId);
+        BigDecimal paid = paymentRepository.sumPaidByBooking(bookingId);
         BigDecimal due = booking.getTotalAmount().subtract(paid);
         return due.max(BigDecimal.ZERO);
     }
@@ -40,6 +40,6 @@ public class PaymentService {
         p.setMethod(method);
         p.setStatus("PAID");
         p.setNote(note);
-        paymentDAO.insert(p);
+        paymentRepository.insert(p);
     }
 }

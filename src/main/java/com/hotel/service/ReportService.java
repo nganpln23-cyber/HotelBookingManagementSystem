@@ -1,6 +1,6 @@
 package com.hotel.service;
 
-import com.hotel.dao.PaymentDAO;
+import com.hotel.repository.PaymentRepository;
 import com.hotel.model.RevenueReport;
 import org.springframework.stereotype.Service;
 
@@ -9,10 +9,10 @@ import java.time.LocalDate;
 
 @Service
 public class ReportService {
-    private final PaymentDAO paymentDAO;
+    private final PaymentRepository paymentRepository;
 
-    public ReportService(PaymentDAO paymentDAO) {
-        this.paymentDAO = paymentDAO;
+    public ReportService(PaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
     }
 
     public RevenueReport getRevenueReport(LocalDate from, LocalDate to) {
@@ -22,10 +22,10 @@ public class ReportService {
         RevenueReport report = new RevenueReport();
         report.setFrom(from);
         report.setTo(to);
-        report.setTotalRevenue(paymentDAO.getRevenueTotal(fromTs, toTs));
-        report.setPaymentCount(paymentDAO.getPaymentCount(fromTs, toTs));
-        report.setDailyRevenue(paymentDAO.getDailyRevenue(fromTs, toTs));
-        report.setRoomTypeRevenue(paymentDAO.getRevenueByRoomType(fromTs, toTs));
+        report.setTotalRevenue(paymentRepository.getRevenueTotal(fromTs, toTs));
+        report.setPaymentCount(paymentRepository.getPaymentCount(fromTs, toTs));
+        report.setDailyRevenue(paymentRepository.getDailyRevenue(fromTs, toTs));
+        report.setRoomTypeRevenue(paymentRepository.getRevenueByRoomType(fromTs, toTs));
         return report;
     }
 }

@@ -1,6 +1,6 @@
 package com.hotel.service;
 
-import com.hotel.dao.CustomerDAO;
+import com.hotel.repository.CustomerRepository;
 import com.hotel.model.Customer;
 import com.hotel.util.PasswordUtil;
 import org.springframework.stereotype.Service;
@@ -9,20 +9,20 @@ import java.util.List;
 
 @Service
 public class CustomerService {
-    private final CustomerDAO customerDAO;
+    private final CustomerRepository customerRepository;
 
-    public CustomerService(CustomerDAO customerDAO) {
-        this.customerDAO = customerDAO;
+    public CustomerService(CustomerRepository customerRepository) {
+        this.customerRepository = customerRepository;
     }
 
-    public List<Customer> findAll() { return customerDAO.findAll(); }
-    public Customer findById(Integer id) { return customerDAO.findById(id); }
+    public List<Customer> findAll() { return customerRepository.findAll(); }
+    public Customer findById(Integer id) { return customerRepository.findById(id); }
     public void save(Customer customer) {
-        if (customer.getId() == null) customerDAO.insert(customer);
-        else customerDAO.update(customer);
+        if (customer.getId() == null) customerRepository.insert(customer);
+        else customerRepository.update(customer);
     }
-    public int createAndReturnId(Customer customer) { return customerDAO.insertAndReturnId(customer); }
-    public void delete(Integer id) { customerDAO.delete(id); }
+    public int createAndReturnId(Customer customer) { return customerRepository.insertAndReturnId(customer); }
+    public void delete(Integer id) { customerRepository.delete(id); }
 
     public Customer register(Customer customer) {
         if (customer.getEmail() == null || customer.getEmail().isBlank()) {
@@ -31,16 +31,16 @@ public class CustomerService {
         if (customer.getPassword() == null || customer.getPassword().isBlank()) {
             throw new IllegalArgumentException("Vui lòng nhập mật khẩu.");
         }
-        if (customerDAO.findByEmail(customer.getEmail()) != null) {
+        if (customerRepository.findByEmail(customer.getEmail()) != null) {
             throw new IllegalArgumentException("Email này đã được đăng ký.");
         }
         customer.setPassword(PasswordUtil.sha256(customer.getPassword()));
-        customer.setId(customerDAO.registerAccount(customer));
+        customer.setId(customerRepository.registerAccount(customer));
         return customer;
     }
 
     public Customer authenticate(String email, String password) {
-        Customer customer = customerDAO.findByEmail(email);
+        Customer customer = customerRepository.findByEmail(email);
         if (customer == null || customer.getPassword() == null) return null;
         if (!customer.getPassword().equals(PasswordUtil.sha256(password))) return null;
         return customer;

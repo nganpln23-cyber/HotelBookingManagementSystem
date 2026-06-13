@@ -1,6 +1,6 @@
 package com.hotel.service;
 
-import com.hotel.dao.BookingDAO;
+import com.hotel.repository.BookingRepository;
 import com.hotel.model.Booking;
 import com.hotel.model.Customer;
 import com.hotel.model.PublicBookingForm;
@@ -16,21 +16,21 @@ import java.util.List;
 
 @Service
 public class BookingService {
-    private final BookingDAO bookingDAO;
+    private final BookingRepository bookingRepository;
     private final RoomService roomService;
     private final CustomerService customerService;
     private final PromotionService promotionService;
 
-    public BookingService(BookingDAO bookingDAO, RoomService roomService, CustomerService customerService, PromotionService promotionService) {
-        this.bookingDAO = bookingDAO;
+    public BookingService(BookingRepository bookingRepository, RoomService roomService, CustomerService customerService, PromotionService promotionService) {
+        this.bookingRepository = bookingRepository;
         this.roomService = roomService;
         this.customerService = customerService;
         this.promotionService = promotionService;
     }
 
-    public List<Booking> findAll() { return bookingDAO.findAll(); }
-    public Booking findById(Integer id) { return bookingDAO.findById(id); }
-    public List<Booking> findByCustomerId(Integer customerId) { return bookingDAO.findByCustomerId(customerId); }
+    public List<Booking> findAll() { return bookingRepository.findAll(); }
+    public Booking findById(Integer id) { return bookingRepository.findById(id); }
+    public List<Booking> findByCustomerId(Integer customerId) { return bookingRepository.findByCustomerId(customerId); }
 
     /** Returns the dates within [from, to) on which every room is already booked. */
     public List<LocalDate> getFullyBookedDates(LocalDate from, LocalDate to) {
@@ -39,7 +39,7 @@ public class BookingService {
                 .count();
         if (totalBookable == 0) return List.of();
 
-        List<Booking> active = bookingDAO.findActiveForRange(from, to);
+        List<Booking> active = bookingRepository.findActiveForRange(from, to);
         List<LocalDate> fullyBooked = new ArrayList<>();
         for (LocalDate d = from; d.isBefore(to); d = d.plusDays(1)) {
             final LocalDate date = d;
@@ -68,10 +68,10 @@ public class BookingService {
         b.setTotalAmount(calculateTotal(b));
         Integer previousRoomId = null;
         if (b.getId() == null) {
-            bookingDAO.insert(b);
+            bookingRepository.insert(b);
         } else {
-            previousRoomId = bookingDAO.findById(b.getId()).getRoomId();
-            bookingDAO.update(b);
+            previousRoomId = bookingRepository.findById(b.getId()).getRoomId();
+            bookingRepository.update(b);
         }
         if (previousRoomId != null && !previousRoomId.equals(b.getRoomId())) {
             roomService.updateStatus(previousRoomId, "AVAILABLE");
@@ -124,7 +124,7 @@ public class BookingService {
         }
         booking.setDiscountAmount(discountAmount);
         booking.setTotalAmount(subtotal.subtract(discountAmount));
-        bookingDAO.insert(booking);
+        bookingRepository.insert(booking);
     }
 
     private void validateGuestInfo(PublicBookingForm form) {
@@ -154,34 +154,34 @@ public class BookingService {
         if (room == null || !"AVAILABLE".equals(room.getStatus())) {
             throw new IllegalArgumentException("Phòng đã chọn hiện không còn trống.");
         }
-        if (bookingDAO.hasActiveOverlap(form.getRoomId(), checkInDate, checkOutDate)) {
+        if (bookingRepository.hasActiveOverlap(form.getRoomId(), checkInDate, checkOutDate)) {
             throw new IllegalArgumentException("Phòng đã có booking trong khoảng ngày này.");
         }
     }
 
     public void confirm(Integer id) {
         Booking b = findById(id);
-        bookingDAO.updateStatus(id, "CONFIRMED");
+        bookingRepository.updateStatus(id, "CONFIRMED");
         roomService.updateStatus(b.getRoomId(), "BOOKED");
     }
 
     public void checkIn(Integer id) {
         Booking b = findById(id);
-        bookingDAO.updateStatus(id, "CHECKED_IN");
+        bookingRepository.updateStatus(id, "CHECKED_IN");
         roomService.updateStatus(b.getRoomId(), "OCCUPIED");
     }
 
     public void checkOut(Integer id) {
         Booking b = findById(id);
-        bookingDAO.updateStatus(id, "CHECKED_OUT");
+        bookingRepository.updateStatus(id, "CHECKED_OUT");
         roomService.updateStatus(b.getRoomId(), "AVAILABLE");
     }
 
     public void cancel(Integer id) {
         Booking b = findById(id);
-        bookingDAO.updateStatus(id, "CANCELLED");
+        bookingRepository.updateStatus(id, "CANCELLED");
         roomService.updateStatus(b.getRoomId(), "AVAILABLE");
     }
 
-    public void delete(Integer id) { bookingDAO.delete(id); }
+    public void delete(Integer id) { bookingRepository.delete(id); }
 }
