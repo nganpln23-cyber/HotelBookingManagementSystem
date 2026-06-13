@@ -31,7 +31,7 @@ CREATE TABLE rooms (
     status VARCHAR(30) NOT NULL DEFAULT 'AVAILABLE',
     description TEXT,
     CONSTRAINT fk_rooms_room_types
-        FOREIGN KEY (room_type_id) REFERENCES room_types(id)
+        FOREIGN KEY (room_type_id) REFERENCES room_types(id) ON DELETE CASCADE
 );
 
 CREATE TABLE customers (
@@ -57,9 +57,9 @@ CREATE TABLE bookings (
     promo_code VARCHAR(30),
     discount_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
     CONSTRAINT fk_bookings_customers
-        FOREIGN KEY (customer_id) REFERENCES customers(id),
+        FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
     CONSTRAINT fk_bookings_rooms
-        FOREIGN KEY (room_id) REFERENCES rooms(id)
+        FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE
 );
 
 CREATE TABLE promotions (
@@ -88,7 +88,7 @@ CREATE TABLE payments (
     note VARCHAR(255),
     paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_payments_bookings
-        FOREIGN KEY (booking_id) REFERENCES bookings(id)
+        FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
 );
 
 INSERT INTO room_types(type_name, description, price_per_night, max_guests, image_url) VALUES

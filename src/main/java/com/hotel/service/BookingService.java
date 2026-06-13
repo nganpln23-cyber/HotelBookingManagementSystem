@@ -161,8 +161,17 @@ public class BookingService {
 
     public void confirm(Integer id) {
         Booking b = findById(id);
-        bookingRepository.updateStatus(id, "CONFIRMED");
-        roomService.updateStatus(b.getRoomId(), "BOOKED");
+        
+        if (!b.getStatus().equals("PENDING")) {
+            throw new IllegalStateException("Chỉ có thể xác nhận đơn đặt phòng ở trạng thái PENDING. Trạng thái hiện tại: " + b.getStatus());
+        }
+        
+        if (!bookingRepository.hasActiveOverlap(b.getRoomId(), b.getCheckInDate(), b.getCheckOutDate())) {
+            bookingRepository.updateStatus(id, "CONFIRMED");
+            roomService.updateStatus(b.getRoomId(), "BOOKED");
+        } else {
+            throw new IllegalStateException("Phòng này đã được đặt trong khoảng thời gian này. Không thể xác nhận.");
+        }
     }
 
     public void checkIn(Integer id) {
@@ -183,5 +192,11 @@ public class BookingService {
         roomService.updateStatus(b.getRoomId(), "AVAILABLE");
     }
 
-    public void delete(Integer id) { bookingRepository.delete(id); }
+    public void delete(Integer id) { 
+        Booking b = findById(id);
+        if (b.getStatus().equals("CHECKED_IN") || b.getStatus().equals("CONFIRMED")) {
+            throw new IllegalStateException("Không thể xóa đơn đặt phòng đang hoạt động. Vui lòng hủy trước.");
+        }
+        bookingRepository.delete(id); 
+    }
 }
