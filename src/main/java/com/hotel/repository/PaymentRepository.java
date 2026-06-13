@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface PaymentRepository {
     void insert(Payment p);
+    void deleteByBookingId(Integer bookingId);
     List<Payment> findAll();
     List<Payment> findByBookingId(Integer bookingId);
     BigDecimal sumPaidByBooking(Integer bookingId);

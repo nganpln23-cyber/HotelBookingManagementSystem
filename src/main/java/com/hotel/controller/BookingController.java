@@ -31,7 +31,7 @@ public class BookingController {
     @GetMapping("/new")
     public String create(Model model) {
         Booking booking = new Booking();
-        booking.setStatus("PENDING");
+        booking.setStatus("CONFIRMED");
         model.addAttribute("booking", booking);
         model.addAttribute("customers", customerService.findAll());
         model.addAttribute("rooms", roomService.findAll());

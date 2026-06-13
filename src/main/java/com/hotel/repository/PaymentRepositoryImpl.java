@@ -41,13 +41,18 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     }
 
     @Override
+    public void deleteByBookingId(Integer bookingId) {
+        jdbcTemplate.update("DELETE FROM payments WHERE booking_id=?", bookingId);
+    }
+
+    @Override
     public List<Payment> findAll() {
         String sql = "SELECT p.*, c.full_name AS customer_name, r.room_number, b.total_amount " +
                 "FROM payments p " +
                 "JOIN bookings b ON p.booking_id = b.id " +
                 "JOIN customers c ON b.customer_id = c.id " +
                 "JOIN rooms r ON b.room_id = r.id " +
-                "ORDER BY p.paid_at DESC";
+                "ORDER BY p.id ASC";
         return jdbcTemplate.query(sql, mapper);
     }
 

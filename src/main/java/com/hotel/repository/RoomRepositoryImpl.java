@@ -43,7 +43,7 @@ public class RoomRepositoryImpl implements RoomRepository {
     @Override
     public List<Room> findAll() {
         String sql = "SELECT r.*, " + ROOM_TYPE_COLUMNS +
-                " FROM rooms r JOIN room_types rt ON r.room_type_id = rt.id ORDER BY r.id DESC";
+                " FROM rooms r JOIN room_types rt ON r.room_type_id = rt.id ORDER BY r.id ASC";
         return jdbcTemplate.query(sql, mapper);
     }
 

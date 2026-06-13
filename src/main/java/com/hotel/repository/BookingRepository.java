@@ -10,6 +10,8 @@ public interface BookingRepository {
     void insert(Booking b);
     List<Booking> findActiveForRange(LocalDate from, LocalDate to);
     boolean hasActiveOverlap(Integer roomId, LocalDate checkInDate, LocalDate checkOutDate);
+    boolean hasConfirmedOverlap(Integer roomId, LocalDate checkInDate, LocalDate checkOutDate);
+    boolean hasConfirmedOverlap(Integer roomId, LocalDate checkInDate, LocalDate checkOutDate, Integer excludeBookingId);
     void update(Booking b);
     List<Booking> findByCustomerId(Integer customerId);
     int countCompletedByCustomer(Integer customerId);

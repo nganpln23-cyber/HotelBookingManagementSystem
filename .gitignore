@@ -43,6 +43,10 @@ local.properties
 # Node (if any)
 node_modules/
 
+# Playwright E2E artifacts
+e2e/test-results/
+e2e/playwright-report/
+
 # Temporary files
 *.tmp
 *.swp

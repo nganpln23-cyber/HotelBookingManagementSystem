@@ -1,7 +1,6 @@
 package com.hotel.repository;
 
 import com.hotel.model.Customer;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -34,7 +33,7 @@ public class CustomerRepositoryImpl implements CustomerRepository {
 
     @Override
     public List<Customer> findAll() {
-        return jdbcTemplate.query("SELECT * FROM customers ORDER BY id DESC", mapper);
+        return jdbcTemplate.query("SELECT * FROM customers ORDER BY id ASC", mapper);
     }
 
     @Override
@@ -44,11 +43,8 @@ public class CustomerRepositoryImpl implements CustomerRepository {
 
     @Override
     public Customer findByEmail(String email) {
-        try {
-            return jdbcTemplate.queryForObject("SELECT * FROM customers WHERE email=?", mapper, email);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
+        List<Customer> results = jdbcTemplate.query("SELECT * FROM customers WHERE email=? ORDER BY id ASC LIMIT 1", mapper, email);
+        return results.isEmpty() ? null : results.get(0);
     }
 
     @Override

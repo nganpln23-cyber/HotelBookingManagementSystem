@@ -44,7 +44,7 @@ public class BookingRepositoryImpl implements BookingRepository {
                 "JOIN customers c ON b.customer_id = c.id " +
                 "JOIN rooms r ON b.room_id = r.id " +
                 "JOIN room_types rt ON r.room_type_id = rt.id " +
-                "ORDER BY b.id DESC";
+                "ORDER BY b.id ASC";
         return jdbcTemplate.query(sql, mapper);
     }
 
@@ -89,6 +89,31 @@ public class BookingRepositoryImpl implements BookingRepository {
     }
 
     @Override
+    public boolean hasConfirmedOverlap(Integer roomId, LocalDate checkInDate, LocalDate checkOutDate) {
+        String sql = "SELECT COUNT(*) FROM bookings " +
+                "WHERE room_id=? " +
+                "AND status IN ('CONFIRMED', 'CHECKED_IN') " +
+                "AND check_in_date < ? " +
+                "AND check_out_date > ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, roomId,
+                Date.valueOf(checkOutDate), Date.valueOf(checkInDate));
+        return count != null && count > 0;
+    }
+
+    @Override
+    public boolean hasConfirmedOverlap(Integer roomId, LocalDate checkInDate, LocalDate checkOutDate, Integer excludeBookingId) {
+        String sql = "SELECT COUNT(*) FROM bookings " +
+                "WHERE room_id=? " +
+                "AND status IN ('CONFIRMED', 'CHECKED_IN') " +
+                "AND check_in_date < ? " +
+                "AND check_out_date > ? " +
+                "AND id != ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, roomId,
+                Date.valueOf(checkOutDate), Date.valueOf(checkInDate), excludeBookingId);
+        return count != null && count > 0;
+    }
+
+    @Override
     public void update(Booking b) {
         String sql = "UPDATE bookings SET customer_id=?, room_id=?, check_in_date=?, check_out_date=?, status=?, total_amount=?, note=? WHERE id=?";
         jdbcTemplate.update(sql, b.getCustomerId(), b.getRoomId(), Date.valueOf(b.getCheckInDate()),
@@ -102,7 +127,7 @@ public class BookingRepositoryImpl implements BookingRepository {
                 "JOIN customers c ON b.customer_id = c.id " +
                 "JOIN rooms r ON b.room_id = r.id " +
                 "JOIN room_types rt ON r.room_type_id = rt.id " +
-                "WHERE b.customer_id=? ORDER BY b.id DESC";
+                "WHERE b.customer_id=? ORDER BY b.id ASC";
         return jdbcTemplate.query(sql, mapper, customerId);
     }
 

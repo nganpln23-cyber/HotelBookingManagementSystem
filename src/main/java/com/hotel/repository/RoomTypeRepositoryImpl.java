@@ -37,7 +37,7 @@ public class RoomTypeRepositoryImpl implements RoomTypeRepository {
 
     @Override
     public List<RoomType> findAll() {
-        return jdbcTemplate.query("SELECT " + BASE_COLUMNS + " FROM room_types ORDER BY id DESC", mapper);
+        return jdbcTemplate.query("SELECT " + BASE_COLUMNS + " FROM room_types ORDER BY id ASC", mapper);
     }
 
     @Override

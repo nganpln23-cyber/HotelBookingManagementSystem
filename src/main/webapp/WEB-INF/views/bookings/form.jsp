@@ -82,5 +82,20 @@ flatpickr("#checkInDate", {
         }
     }
 });
+
+document.querySelector('form').addEventListener('submit', function (e) {
+    var checkIn = document.getElementById('checkInDate').value;
+    var checkOut = document.getElementById('checkOutDate').value;
+    if (!checkIn || !checkOut) {
+        e.preventDefault();
+        alert('Vui lòng chọn ngày nhận phòng và ngày trả phòng.');
+        return false;
+    }
+    if (checkOut <= checkIn) {
+        e.preventDefault();
+        alert('Ngày trả phòng phải sau ngày nhận phòng.');
+        return false;
+    }
+});
 </script>
 <%@ include file="../layout/footer.jsp" %>

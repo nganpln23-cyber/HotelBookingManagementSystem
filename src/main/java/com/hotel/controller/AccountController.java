@@ -78,6 +78,9 @@ public class AccountController {
     @GetMapping
     public String dashboard(HttpSession session, Model model) {
         Customer customer = (Customer) session.getAttribute("currentCustomer");
+        if (customer == null) {
+            return "redirect:/account/login";
+        }
         model.addAttribute("customer", customer);
         model.addAttribute("bookings", bookingService.findByCustomerId(customer.getId()));
         model.addAttribute("promotions", promotionService.findEligiblePromotions(customer.getId()));
@@ -87,6 +90,9 @@ public class AccountController {
     @GetMapping("/bookings/{id}")
     public String invoice(@PathVariable("id") Integer id, HttpSession session, Model model) {
         Customer customer = (Customer) session.getAttribute("currentCustomer");
+        if (customer == null) {
+            return "redirect:/account/login";
+        }
         Booking booking = bookingService.findById(id);
         if (booking == null || !booking.getCustomerId().equals(customer.getId())) {
             return "redirect:/account";

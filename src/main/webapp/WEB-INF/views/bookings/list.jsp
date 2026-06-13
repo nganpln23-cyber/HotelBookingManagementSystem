@@ -21,14 +21,25 @@
                     <td><span class="badge badge-status-${b.status}">${b.status}</span></td>
                     <td><fmt:formatNumber value="${b.totalAmount}" type="number" groupingUsed="true" /> VND</td>
                     <td>
-                        <a class="btn btn-sm btn-success" href="${pageContext.request.contextPath}/admin/bookings/confirm/${b.id}">Confirm</a>
-                        <a class="btn btn-sm btn-info" href="${pageContext.request.contextPath}/admin/bookings/check-in/${b.id}">Check-in</a>
-                        <a class="btn btn-sm btn-secondary" href="${pageContext.request.contextPath}/admin/bookings/check-out/${b.id}">Check-out</a>
+                        <c:if test="${b.status == 'PENDING'}">
+                            <a class="btn btn-sm btn-success" href="${pageContext.request.contextPath}/admin/bookings/confirm/${b.id}">Confirm</a>
+                        </c:if>
+                        <c:if test="${b.status == 'CONFIRMED'}">
+                            <a class="btn btn-sm btn-info" href="${pageContext.request.contextPath}/admin/bookings/check-in/${b.id}">Check-in</a>
+                        </c:if>
+                        <c:if test="${b.status == 'CHECKED_IN'}">
+                            <a class="btn btn-sm btn-secondary" href="${pageContext.request.contextPath}/admin/bookings/check-out/${b.id}">Check-out</a>
+                        </c:if>
+                        <c:if test="${b.status == 'PENDING' || b.status == 'CONFIRMED'}">
+                            <a class="btn btn-sm btn-dark" onclick="return confirm('Hủy booking này?')" href="${pageContext.request.contextPath}/admin/bookings/cancel/${b.id}">Hủy</a>
+                        </c:if>
                         <c:if test="${b.status == 'CONFIRMED' || b.status == 'CHECKED_IN' || b.status == 'CHECKED_OUT'}">
                             <a class="btn btn-sm btn-primary" href="${pageContext.request.contextPath}/admin/payments/new/${b.id}"><i class="fas fa-money-bill-wave"></i> Thanh toán</a>
                         </c:if>
                         <a class="btn btn-sm btn-warning" href="${pageContext.request.contextPath}/admin/bookings/edit/${b.id}">Sửa</a>
-                        <a class="btn btn-sm btn-danger" onclick="return confirm('Xóa booking này?')" href="${pageContext.request.contextPath}/admin/bookings/delete/${b.id}">Xóa</a>
+                        <c:if test="${b.status != 'CONFIRMED' && b.status != 'CHECKED_IN'}">
+                            <a class="btn btn-sm btn-danger" onclick="return confirm('Xóa booking này?')" href="${pageContext.request.contextPath}/admin/bookings/delete/${b.id}">Xóa</a>
+                        </c:if>
                     </td>
                 </tr>
             </c:forEach>
