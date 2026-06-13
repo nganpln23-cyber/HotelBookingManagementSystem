@@ -1,0 +1,51 @@
+# Java / Maven
+/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven wrapper
+/.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+/.project
+/.classpath
+/.settings/
+
+# VS Code
+.vscode/
+
+# Tomcat and logs
+.tomcat/
+logs/
+*.log
+
+# Build / output
+/out/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment / local
+.env
+local.properties
+
+# Database
+*.db
+
+# Node (if any)
+node_modules/
+
+# Temporary files
+*.tmp
+*.swp
+
+# Ignore commit message file if present
+.git_commit_msg.txt

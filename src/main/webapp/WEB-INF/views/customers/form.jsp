@@ -1,0 +1,18 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="pageTitle" value="Thông tin khách hàng" />
+<%@ include file="../layout/header.jsp" %>
+<div class="card">
+    <form method="post" action="${pageContext.request.contextPath}/admin/customers/save">
+        <div class="card-body">
+            <input type="hidden" name="id" value="${customer.id}">
+            <div class="form-group"><label>Họ tên</label><input class="form-control" name="fullName" value="${customer.fullName}" required></div>
+            <div class="form-group"><label>Điện thoại</label><input class="form-control" name="phone" value="${customer.phone}" required></div>
+            <div class="form-group"><label>Email</label><input class="form-control" type="email" name="email" value="${customer.email}"></div>
+            <div class="form-group"><label>CCCD/Passport</label><input class="form-control" name="identityNumber" value="${customer.identityNumber}"></div>
+            <div class="form-group"><label>Địa chỉ</label><textarea class="form-control" name="address" rows="3">${customer.address}</textarea></div>
+        </div>
+        <div class="card-footer"><button class="btn btn-primary">Lưu</button><a href="${pageContext.request.contextPath}/admin/customers" class="btn btn-secondary">Quay lại</a></div>
+    </form>
+</div>
+<%@ include file="../layout/footer.jsp" %>

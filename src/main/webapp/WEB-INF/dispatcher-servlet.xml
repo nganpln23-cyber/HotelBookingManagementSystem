@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <!-- Quét các annotation @Controller, @Service, @Repository -->
+    <context:component-scan base-package="com.hotel.controller" />
+    <context:component-scan base-package="com.hotel.service" />
+    <context:component-scan base-package="com.hotel.dao" />
+    <context:component-scan base-package="com.hotel.web" />
+
+    <!-- Bật @GetMapping, @PostMapping, @RequestMapping, @ModelAttribute... -->
+    <mvc:annotation-driven />
+
+    <!-- Cho phép upload file (multipart/form-data) -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.support.StandardServletMultipartResolver" />
+
+    <!-- Chặn truy cập /admin/** nếu chưa đăng nhập -->
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/admin/**" />
+            <ref bean="loginInterceptor" />
+        </mvc:interceptor>
+        <!-- Chặn truy cập /account/** nếu khách hàng chưa đăng nhập -->
+        <mvc:interceptor>
+            <mvc:mapping path="/account/**" />
+            <mvc:exclude-mapping path="/account/login" />
+            <mvc:exclude-mapping path="/account/register" />
+            <ref bean="customerLoginInterceptor" />
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <!-- Cho phép load CSS/JS/Image trong thư mục /assets/ -->
+    <mvc:resources mapping="/assets/**" location="/assets/" />
+    <mvc:default-servlet-handler />
+
+    <!-- View Resolver: controller trả về "rooms/list" thì mở /WEB-INF/views/rooms/list.jsp -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+    <!-- Kết nối MySQL: sửa username/password tại đây -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://localhost:3307/hotel_booking_db?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh&amp;characterEncoding=UTF-8" />
+        <property name="username" value="root" />
+        <property name="password" value="" />
+    </bean>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <constructor-arg ref="dataSource" />
+    </bean>
+
+</beans>

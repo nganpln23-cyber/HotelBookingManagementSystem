@@ -1,0 +1,187 @@
+package com.hotel.service;
+
+import com.hotel.dao.BookingDAO;
+import com.hotel.model.Booking;
+import com.hotel.model.Customer;
+import com.hotel.model.PublicBookingForm;
+import com.hotel.model.Room;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class BookingService {
+    private final BookingDAO bookingDAO;
+    private final RoomService roomService;
+    private final CustomerService customerService;
+    private final PromotionService promotionService;
+
+    public BookingService(BookingDAO bookingDAO, RoomService roomService, CustomerService customerService, PromotionService promotionService) {
+        this.bookingDAO = bookingDAO;
+        this.roomService = roomService;
+        this.customerService = customerService;
+        this.promotionService = promotionService;
+    }
+
+    public List<Booking> findAll() { return bookingDAO.findAll(); }
+    public Booking findById(Integer id) { return bookingDAO.findById(id); }
+    public List<Booking> findByCustomerId(Integer customerId) { return bookingDAO.findByCustomerId(customerId); }
+
+    /** Returns the dates within [from, to) on which every room is already booked. */
+    public List<LocalDate> getFullyBookedDates(LocalDate from, LocalDate to) {
+        long totalBookable = roomService.findAll().stream()
+                .filter(r -> !"MAINTENANCE".equals(r.getStatus()))
+                .count();
+        if (totalBookable == 0) return List.of();
+
+        List<Booking> active = bookingDAO.findActiveForRange(from, to);
+        List<LocalDate> fullyBooked = new ArrayList<>();
+        for (LocalDate d = from; d.isBefore(to); d = d.plusDays(1)) {
+            final LocalDate date = d;
+            long bookedRooms = active.stream()
+                    .filter(b -> !b.getCheckInDate().isAfter(date) && b.getCheckOutDate().isAfter(date))
+                    .map(Booking::getRoomId)
+                    .distinct()
+                    .count();
+            if (bookedRooms >= totalBookable) fullyBooked.add(date);
+        }
+        return fullyBooked;
+    }
+
+    public BigDecimal calculateTotal(Booking b) {
+        if (b.getRoomId() == null || b.getCheckInDate() == null || b.getCheckOutDate() == null) {
+            return BigDecimal.ZERO;
+        }
+        Room room = roomService.findById(b.getRoomId());
+        long nights = ChronoUnit.DAYS.between(b.getCheckInDate(), b.getCheckOutDate());
+        if (nights < 1) nights = 1;
+        return room.getRoomType().getPricePerNight().multiply(BigDecimal.valueOf(nights));
+    }
+
+    public void save(Booking b) {
+        if (b.getStatus() == null || b.getStatus().isBlank()) b.setStatus("PENDING");
+        b.setTotalAmount(calculateTotal(b));
+        Integer previousRoomId = null;
+        if (b.getId() == null) {
+            bookingDAO.insert(b);
+        } else {
+            previousRoomId = bookingDAO.findById(b.getId()).getRoomId();
+            bookingDAO.update(b);
+        }
+        if (previousRoomId != null && !previousRoomId.equals(b.getRoomId())) {
+            roomService.updateStatus(previousRoomId, "AVAILABLE");
+        }
+        syncRoomStatus(b.getRoomId(), b.getStatus());
+    }
+
+    private void syncRoomStatus(Integer roomId, String bookingStatus) {
+        if (roomId == null || bookingStatus == null) return;
+        switch (bookingStatus) {
+            case "CONFIRMED" -> roomService.updateStatus(roomId, "BOOKED");
+            case "CHECKED_IN" -> roomService.updateStatus(roomId, "OCCUPIED");
+            case "CHECKED_OUT", "CANCELLED" -> roomService.updateStatus(roomId, "AVAILABLE");
+            default -> { }
+        }
+    }
+
+    public void createPublicBooking(PublicBookingForm form, Customer loggedInCustomer) {
+        validateBookingDetails(form);
+
+        int customerId;
+        if (loggedInCustomer != null) {
+            customerId = loggedInCustomer.getId();
+        } else {
+            validateGuestInfo(form);
+            Customer customer = new Customer();
+            customer.setFullName(form.getFullName());
+            customer.setPhone(form.getPhone());
+            customer.setEmail(form.getEmail());
+            customer.setIdentityNumber(form.getIdentityNumber());
+            customer.setAddress(form.getAddress());
+            customerId = customerService.createAndReturnId(customer);
+        }
+
+        Booking booking = new Booking();
+        booking.setCustomerId(customerId);
+        booking.setRoomId(form.getRoomId());
+        booking.setCheckInDate(form.getCheckInDate());
+        booking.setCheckOutDate(form.getCheckOutDate());
+        booking.setStatus("PENDING");
+        booking.setNote(form.getNote());
+
+        BigDecimal subtotal = calculateTotal(booking);
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (form.getPromoCode() != null && !form.getPromoCode().isBlank()) {
+            String code = form.getPromoCode().trim().toUpperCase();
+            BigDecimal discountPercent = promotionService.validate(code, customerId);
+            discountAmount = subtotal.multiply(discountPercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            booking.setPromoCode(code);
+        }
+        booking.setDiscountAmount(discountAmount);
+        booking.setTotalAmount(subtotal.subtract(discountAmount));
+        bookingDAO.insert(booking);
+    }
+
+    private void validateGuestInfo(PublicBookingForm form) {
+        if (form.getFullName() == null || form.getFullName().isBlank()) {
+            throw new IllegalArgumentException("Vui lòng nhập họ tên.");
+        }
+        if (form.getPhone() == null || form.getPhone().isBlank()) {
+            throw new IllegalArgumentException("Vui lòng nhập số điện thoại.");
+        }
+    }
+
+    private void validateBookingDetails(PublicBookingForm form) {
+        if (form.getRoomId() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn phòng.");
+        }
+
+        LocalDate checkInDate = form.getCheckInDate();
+        LocalDate checkOutDate = form.getCheckOutDate();
+        if (checkInDate == null || checkOutDate == null) {
+            throw new IllegalArgumentException("Vui lòng chọn ngày nhận và ngày trả phòng.");
+        }
+        if (!checkOutDate.isAfter(checkInDate)) {
+            throw new IllegalArgumentException("Ngày trả phòng phải sau ngày nhận phòng.");
+        }
+
+        Room room = roomService.findById(form.getRoomId());
+        if (room == null || !"AVAILABLE".equals(room.getStatus())) {
+            throw new IllegalArgumentException("Phòng đã chọn hiện không còn trống.");
+        }
+        if (bookingDAO.hasActiveOverlap(form.getRoomId(), checkInDate, checkOutDate)) {
+            throw new IllegalArgumentException("Phòng đã có booking trong khoảng ngày này.");
+        }
+    }
+
+    public void confirm(Integer id) {
+        Booking b = findById(id);
+        bookingDAO.updateStatus(id, "CONFIRMED");
+        roomService.updateStatus(b.getRoomId(), "BOOKED");
+    }
+
+    public void checkIn(Integer id) {
+        Booking b = findById(id);
+        bookingDAO.updateStatus(id, "CHECKED_IN");
+        roomService.updateStatus(b.getRoomId(), "OCCUPIED");
+    }
+
+    public void checkOut(Integer id) {
+        Booking b = findById(id);
+        bookingDAO.updateStatus(id, "CHECKED_OUT");
+        roomService.updateStatus(b.getRoomId(), "AVAILABLE");
+    }
+
+    public void cancel(Integer id) {
+        Booking b = findById(id);
+        bookingDAO.updateStatus(id, "CANCELLED");
+        roomService.updateStatus(b.getRoomId(), "AVAILABLE");
+    }
+
+    public void delete(Integer id) { bookingDAO.delete(id); }
+}
