@@ -61,9 +61,9 @@
     -->
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <property name="driverClassName" value="com.mysql.cj.jdbc.Driver" />
-        <property name="url" value="#{systemEnvironment['DB_URL'] ?: 'jdbc:mysql://localhost:3307/hotel_booking_db?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh&amp;characterEncoding=UTF-8'}" />
-        <property name="username" value="#{systemEnvironment['DB_USERNAME'] ?: 'root'}" />
-        <property name="password" value="#{systemEnvironment['DB_PASSWORD'] ?: ''}" />
+        <property name="url" value="${DB_URL:jdbc:mysql://localhost:3307/hotel_booking_db?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh&amp;characterEncoding=UTF-8}" />
+        <property name="username" value="${DB_USERNAME:root}" />
+        <property name="password" value="${DB_PASSWORD:}" />
     </bean>
 
     <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
@@ -74,8 +74,8 @@
     <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
         <property name="host" value="smtp.gmail.com" />
         <property name="port" value="587" />
-        <property name="username" value="#{systemEnvironment['MAIL_USERNAME'] ?: 'YOUR_EMAIL@gmail.com'}" />
-        <property name="password" value="#{systemEnvironment['MAIL_PASSWORD'] ?: 'YOUR_APP_PASSWORD'}" />
+        <property name="username" value="${MAIL_USERNAME:YOUR_EMAIL@gmail.com}" />
+        <property name="password" value="${MAIL_PASSWORD:YOUR_APP_PASSWORD}" />
         <property name="javaMailProperties">
             <props>
                 <prop key="mail.smtp.auth">true</prop>
