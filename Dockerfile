@@ -11,7 +11,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -q
 
 # Stage 2: Chạy trên Tomcat 10 (tương thích Jakarta EE 10)
-FROM tomcat:10.1-jre17-alpine
+FROM tomcat:10.1-jdk17-temurin-alpine
 
 # Xóa app mặc định của Tomcat
 RUN rm -rf /usr/local/tomcat/webapps/*
