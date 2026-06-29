@@ -16,6 +16,7 @@ public class CustomerService {
     }
 
     public List<Customer> findAll() { return customerRepository.findAll(); }
+    public List<Customer> search(String keyword) { return customerRepository.search(keyword); }
     public Customer findById(Integer id) { return customerRepository.findById(id); }
     public void save(Customer customer) {
         if (customer.getId() == null) customerRepository.insert(customer);

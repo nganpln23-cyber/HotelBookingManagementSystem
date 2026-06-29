@@ -2,9 +2,13 @@ package com.hotel.controller;
 
 import com.hotel.model.Customer;
 import com.hotel.service.CustomerService;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/customers")
@@ -16,8 +20,9 @@ public class CustomerController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("customers", customerService.findAll());
+    public String list(@RequestParam(name = "keyword", required = false) String keyword, Model model) {
+        model.addAttribute("customers", customerService.search(keyword));
+        model.addAttribute("keyword", keyword);
         return "customers/list";
     }
 
@@ -34,7 +39,13 @@ public class CustomerController {
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute Customer customer) {
+    public String save(@Valid @ModelAttribute Customer customer, BindingResult result, Model model) {
+        if (result.hasErrors()) {
+            model.addAttribute("error", result.getFieldErrors().stream()
+                    .map(fe -> fe.getDefaultMessage())
+                    .collect(Collectors.joining(" | ")));
+            return "customers/form";
+        }
         customerService.save(customer);
         return "redirect:/admin/customers";
     }

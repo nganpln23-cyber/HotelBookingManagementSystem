@@ -2,10 +2,14 @@ package com.hotel.controller;
 
 import com.hotel.model.RoomType;
 import com.hotel.service.RoomTypeService;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/room-types")
@@ -35,8 +39,15 @@ public class RoomTypeController {
     }
 
     @PostMapping("/save")
-    public String save(@ModelAttribute RoomType roomType,
-                        @RequestParam(name = "imageFile", required = false) MultipartFile imageFile) {
+    public String save(@Valid @ModelAttribute RoomType roomType, BindingResult result,
+                        @RequestParam(name = "imageFile", required = false) MultipartFile imageFile,
+                        Model model) {
+        if (result.hasErrors()) {
+            model.addAttribute("error", result.getFieldErrors().stream()
+                    .map(fe -> fe.getDefaultMessage())
+                    .collect(Collectors.joining(" | ")));
+            return "room-types/form";
+        }
         roomTypeService.save(roomType, imageFile);
         return "redirect:/admin/room-types";
     }

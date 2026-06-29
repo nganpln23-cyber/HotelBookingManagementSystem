@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class BookingService {
@@ -22,13 +23,17 @@ public class BookingService {
     private final RoomService roomService;
     private final CustomerService customerService;
     private final PromotionService promotionService;
+    private final EmailService emailService;
 
-    public BookingService(BookingRepository bookingRepository, PaymentRepository paymentRepository, RoomService roomService, CustomerService customerService, PromotionService promotionService) {
+    public BookingService(BookingRepository bookingRepository, PaymentRepository paymentRepository,
+                          RoomService roomService, CustomerService customerService,
+                          PromotionService promotionService, EmailService emailService) {
         this.bookingRepository = bookingRepository;
         this.paymentRepository = paymentRepository;
         this.roomService = roomService;
         this.customerService = customerService;
         this.promotionService = promotionService;
+        this.emailService = emailService;
     }
 
     public List<Booking> findAll() { return bookingRepository.findAll(); }
@@ -94,9 +99,14 @@ public class BookingService {
             bookingRepository.update(b);
         }
         if (previousRoomId != null && !previousRoomId.equals(b.getRoomId())) {
-            roomService.updateStatus(previousRoomId, "AVAILABLE");
+            recheckRoomStatus(previousRoomId);
         }
         syncRoomStatus(b.getRoomId(), b.getStatus());
+    }
+
+    private void recheckRoomStatus(Integer roomId) {
+        if (roomId == null) return;
+        roomService.updateStatus(roomId, bookingRepository.findDominantBookingStatusForRoom(roomId));
     }
 
     private void syncRoomStatus(Integer roomId, String bookingStatus) {
@@ -104,12 +114,13 @@ public class BookingService {
         switch (bookingStatus) {
             case "CONFIRMED" -> roomService.updateStatus(roomId, "BOOKED");
             case "CHECKED_IN" -> roomService.updateStatus(roomId, "OCCUPIED");
-            case "CHECKED_OUT", "CANCELLED" -> roomService.updateStatus(roomId, "AVAILABLE");
+            case "CHECKED_OUT", "CANCELLED" -> recheckRoomStatus(roomId);
             default -> { }
         }
     }
 
-    public void createPublicBooking(PublicBookingForm form, Customer loggedInCustomer) {
+    /** Creates a booking in AWAITING_PAYMENT status and returns its ID. */
+    public int createPublicBooking(PublicBookingForm form, Customer loggedInCustomer) {
         validateBookingDetails(form);
 
         String promoCode = null;
@@ -118,16 +129,17 @@ public class BookingService {
         }
 
         int customerId;
+        String customerEmail;
         BigDecimal discountPercent = BigDecimal.ZERO;
         if (loggedInCustomer != null) {
             customerId = loggedInCustomer.getId();
+            customerEmail = loggedInCustomer.getEmail();
             if (promoCode != null) {
                 discountPercent = promotionService.validate(promoCode, customerId);
             }
         } else {
             validateGuestInfo(form);
             if (promoCode != null) {
-                // A brand-new guest customer has no completed bookings yet, so validate against that.
                 discountPercent = promotionService.validate(promoCode, 0);
             }
             Customer customer = new Customer();
@@ -137,6 +149,7 @@ public class BookingService {
             customer.setIdentityNumber(form.getIdentityNumber());
             customer.setAddress(form.getAddress());
             customerId = customerService.createAndReturnId(customer);
+            customerEmail = form.getEmail();
         }
 
         Booking booking = new Booking();
@@ -144,15 +157,61 @@ public class BookingService {
         booking.setRoomId(form.getRoomId());
         booking.setCheckInDate(form.getCheckInDate());
         booking.setCheckOutDate(form.getCheckOutDate());
-        booking.setStatus("PENDING");
+        booking.setStatus("AWAITING_PAYMENT");
         booking.setNote(form.getNote());
         booking.setPromoCode(promoCode);
+        booking.setCustomerEmail(customerEmail);
 
         BigDecimal subtotal = calculateTotal(booking);
         BigDecimal discountAmount = subtotal.multiply(discountPercent).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         booking.setDiscountAmount(discountAmount);
         booking.setTotalAmount(subtotal.subtract(discountAmount));
-        bookingRepository.insert(booking);
+        return bookingRepository.insert(booking);
+    }
+
+    /** Processes the online payment: creates payment record, moves booking to PENDING, sends email. */
+    public void processOnlinePayment(Integer bookingId, String paymentRef) {
+        Booking b = findById(bookingId);
+        if (!"AWAITING_PAYMENT".equals(b.getStatus())) return;
+
+        com.hotel.model.Payment payment = new com.hotel.model.Payment();
+        payment.setBookingId(bookingId);
+        payment.setAmount(b.getTotalAmount());
+        payment.setMethod("ONLINE");
+        payment.setStatus("PAID");
+        payment.setNote("Thanh toán online. Mã GD: " + paymentRef);
+        paymentRepository.insert(payment);
+
+        bookingRepository.updateOnlinePayment(bookingId, paymentRef);
+        bookingRepository.updateStatus(bookingId, "PENDING");
+
+        String email = b.getCustomerEmail();
+        if (email == null || email.isBlank()) {
+            email = resolveCustomerEmail(b.getCustomerId());
+        }
+        if (email != null && !email.isBlank()) {
+            b.setOnlinePaid(true);
+            b.setOnlinePaymentRef(paymentRef);
+            emailService.sendPaymentReceived(email, b.getCustomerName(), b);
+        }
+    }
+
+    /** Cancels a booking stuck in AWAITING_PAYMENT (customer abandoned payment). */
+    public void cancelAwaitingPayment(Integer id) {
+        Booking b = findById(id);
+        if ("AWAITING_PAYMENT".equals(b.getStatus())) {
+            bookingRepository.updateStatus(id, "CANCELLED");
+            recheckRoomStatus(b.getRoomId());
+        }
+    }
+
+    private String resolveCustomerEmail(Integer customerId) {
+        try {
+            Customer c = customerService.findById(customerId);
+            return c != null ? c.getEmail() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void validateGuestInfo(PublicBookingForm form) {
@@ -179,24 +238,39 @@ public class BookingService {
         }
 
         Room room = roomService.findById(form.getRoomId());
-        if (room == null || !"AVAILABLE".equals(room.getStatus())) {
-            throw new IllegalArgumentException("Phòng đã chọn hiện không còn trống.");
+        if (room == null || "MAINTENANCE".equals(room.getStatus())) {
+            throw new IllegalArgumentException("Phòng đã chọn hiện đang bảo trì, không thể đặt.");
         }
         if (bookingRepository.hasActiveOverlap(form.getRoomId(), checkInDate, checkOutDate)) {
             throw new IllegalArgumentException("Phòng đã có booking trong khoảng ngày này.");
         }
     }
 
+    public List<Booking> findActiveBookings() {
+        return bookingRepository.findByStatuses("PENDING", "CONFIRMED", "CHECKED_IN");
+    }
+
     public void confirm(Integer id) {
         Booking b = findById(id);
-        
+
         if (!b.getStatus().equals("PENDING")) {
             throw new IllegalStateException("Chỉ có thể xác nhận đơn đặt phòng ở trạng thái PENDING. Trạng thái hiện tại: " + b.getStatus());
         }
-        
+
         if (!bookingRepository.hasConfirmedOverlap(b.getRoomId(), b.getCheckInDate(), b.getCheckOutDate())) {
             bookingRepository.updateStatus(id, "CONFIRMED");
             roomService.updateStatus(b.getRoomId(), "BOOKED");
+            String code = "BK" + String.format("%06d", id);
+            bookingRepository.updateConfirmationCode(id, code);
+
+            if (b.isOnlinePaid()) {
+                String email = b.getCustomerEmail();
+                if (email == null || email.isBlank()) email = resolveCustomerEmail(b.getCustomerId());
+                if (email != null && !email.isBlank()) {
+                    b.setConfirmationCode(code);
+                    emailService.sendBookingConfirmed(email, b.getCustomerName(), b);
+                }
+            }
         } else {
             throw new IllegalStateException("Phòng này đã được đặt trong khoảng thời gian này. Không thể xác nhận.");
         }
@@ -209,6 +283,8 @@ public class BookingService {
         }
         bookingRepository.updateStatus(id, "CHECKED_IN");
         roomService.updateStatus(b.getRoomId(), "OCCUPIED");
+        String code = "CI" + UUID.randomUUID().toString().replace("-","").substring(0,8).toUpperCase();
+        bookingRepository.updateCheckinCode(id, code);
     }
 
     public void checkOut(Integer id) {
@@ -216,17 +292,21 @@ public class BookingService {
         if (!b.getStatus().equals("CHECKED_IN")) {
             throw new IllegalStateException("Chỉ có thể check-out đơn đặt phòng ở trạng thái CHECKED_IN. Trạng thái hiện tại: " + b.getStatus());
         }
+        BigDecimal paid = paymentRepository.sumPaidByBooking(id);
+        if (paid == null || paid.compareTo(b.getTotalAmount()) < 0) {
+            throw new IllegalStateException("Khách hàng chưa thanh toán đủ. Vui lòng thanh toán trước khi check-out.");
+        }
         bookingRepository.updateStatus(id, "CHECKED_OUT");
-        roomService.updateStatus(b.getRoomId(), "AVAILABLE");
+        recheckRoomStatus(b.getRoomId());
     }
 
     public void cancel(Integer id) {
         Booking b = findById(id);
-        if (!b.getStatus().equals("PENDING") && !b.getStatus().equals("CONFIRMED")) {
-            throw new IllegalStateException("Chỉ có thể hủy đơn đặt phòng ở trạng thái PENDING hoặc CONFIRMED. Trạng thái hiện tại: " + b.getStatus());
+        if (!b.getStatus().equals("PENDING") && !b.getStatus().equals("CONFIRMED") && !b.getStatus().equals("AWAITING_PAYMENT")) {
+            throw new IllegalStateException("Chỉ có thể hủy đơn đặt phòng ở trạng thái PENDING, CONFIRMED hoặc AWAITING_PAYMENT. Trạng thái hiện tại: " + b.getStatus());
         }
         bookingRepository.updateStatus(id, "CANCELLED");
-        roomService.updateStatus(b.getRoomId(), "AVAILABLE");
+        recheckRoomStatus(b.getRoomId());
     }
 
     public void delete(Integer id) {
@@ -234,7 +314,13 @@ public class BookingService {
         if (b.getStatus().equals("CHECKED_IN") || b.getStatus().equals("CONFIRMED")) {
             throw new IllegalStateException("Không thể xóa đơn đặt phòng đang hoạt động. Vui lòng hủy trước.");
         }
+        Integer roomId = b.getRoomId();
         paymentRepository.deleteByBookingId(id);
         bookingRepository.delete(id);
+        recheckRoomStatus(roomId);
+    }
+
+    public void syncAllRoomStatuses() {
+        roomService.findAll().forEach(r -> recheckRoomStatus(r.getId()));
     }
 }

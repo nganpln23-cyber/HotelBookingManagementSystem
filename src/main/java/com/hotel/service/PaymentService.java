@@ -21,6 +21,7 @@ public class PaymentService {
 
     public List<Payment> findAll() { return paymentRepository.findAll(); }
     public List<Payment> findByBooking(Integer bookingId) { return paymentRepository.findByBookingId(bookingId); }
+    public List<Payment> findByBookingId(Integer bookingId) { return paymentRepository.findByBookingId(bookingId); }
 
     public BigDecimal getAmountDue(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId);

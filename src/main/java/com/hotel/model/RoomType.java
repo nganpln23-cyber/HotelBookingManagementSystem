@@ -1,13 +1,27 @@
 package com.hotel.model;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public class RoomType {
     private Integer id;
+
+    @NotBlank(message = "Tên loại phòng không được để trống")
     private String typeName;
+
     private String description;
+
+    @NotNull(message = "Giá mỗi đêm không được để trống")
+    @DecimalMin(value = "0.01", message = "Giá phải lớn hơn 0")
     private BigDecimal pricePerNight;
+
+    @NotNull(message = "Số khách tối đa không được để trống")
+    @Min(value = 1, message = "Số khách tối đa phải ít nhất là 1")
     private Integer maxGuests;
+
     private String imageUrl;
     private byte[] imageData;
     private String imageContentType;

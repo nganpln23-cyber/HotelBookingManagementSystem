@@ -16,6 +16,7 @@ public class RoomService {
     }
 
     public List<Room> findAll() { return roomRepository.findAll(); }
+    public List<Room> search(String keyword, String status) { return roomRepository.search(keyword, status); }
     public List<Room> findAvailable() { return roomRepository.findAvailable(); }
     public List<Room> findAvailableForDates(LocalDate checkIn, LocalDate checkOut) { return roomRepository.findAvailableForDates(checkIn, checkOut); }
     public Room findById(Integer id) { return roomRepository.findById(id); }

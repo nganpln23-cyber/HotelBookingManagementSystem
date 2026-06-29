@@ -1,5 +1,6 @@
 package com.hotel.controller;
 
+import com.hotel.model.Booking;
 import com.hotel.model.Customer;
 import com.hotel.model.PublicBookingForm;
 import com.hotel.model.Room;
@@ -21,7 +22,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Controller
@@ -120,8 +123,8 @@ public class PublicController {
     public String saveBooking(@ModelAttribute PublicBookingForm bookingForm, HttpSession session, Model model) {
         Customer currentCustomer = (Customer) session.getAttribute("currentCustomer");
         try {
-            bookingService.createPublicBooking(bookingForm, currentCustomer);
-            return "redirect:/rooms?success=1";
+            int bookingId = bookingService.createPublicBooking(bookingForm, currentCustomer);
+            return "redirect:/booking/payment/" + bookingId;
         } catch (IllegalArgumentException ex) {
             model.addAttribute("error", ex.getMessage());
             model.addAttribute("bookingForm", bookingForm);
@@ -133,5 +136,46 @@ public class PublicController {
             addAvailabilityCalendar(model);
             return "public/book";
         }
+    }
+
+    @GetMapping("/booking/payment/{id}")
+    public String paymentPage(@PathVariable("id") Integer id, Model model) {
+        Booking booking;
+        try { booking = bookingService.findById(id); } catch (Exception e) { return "redirect:/"; }
+        if (booking == null) return "redirect:/";
+        if ("PENDING".equals(booking.getStatus()) || "CONFIRMED".equals(booking.getStatus())) {
+            return "redirect:/booking/success/" + id;
+        }
+        if (!"AWAITING_PAYMENT".equals(booking.getStatus())) return "redirect:/";
+        long nights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
+        model.addAttribute("booking", booking);
+        model.addAttribute("nights", nights);
+        return "public/payment";
+    }
+
+    @PostMapping("/booking/payment/{id}/process")
+    public String processPayment(@PathVariable("id") Integer id) {
+        try {
+            String txnId = "GBH" + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+            bookingService.processOnlinePayment(id, txnId);
+        } catch (Exception ignored) {}
+        return "redirect:/booking/success/" + id;
+    }
+
+    @GetMapping("/booking/success/{id}")
+    public String paymentSuccess(@PathVariable("id") Integer id, Model model) {
+        Booking booking;
+        try { booking = bookingService.findById(id); } catch (Exception e) { return "redirect:/"; }
+        if (booking == null) return "redirect:/";
+        long nights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
+        model.addAttribute("booking", booking);
+        model.addAttribute("nights", nights);
+        return "public/payment-success";
+    }
+
+    @GetMapping("/booking/cancel-payment/{id}")
+    public String cancelPayment(@PathVariable("id") Integer id) {
+        try { bookingService.cancelAwaitingPayment(id); } catch (Exception ignored) {}
+        return "redirect:/rooms";
     }
 }

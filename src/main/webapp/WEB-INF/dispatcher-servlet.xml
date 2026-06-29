@@ -8,6 +8,9 @@
            http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd
            http://www.springframework.org/schema/mvc https://www.springframework.org/schema/mvc/spring-mvc.xsd">
 
+    <!-- Đọc biến môi trường (DB_URL, DB_USERNAME, DB_PASSWORD, ...) -->
+    <context:property-placeholder system-properties-mode="OVERRIDE" />
+
     <!-- Quét các annotation @Controller, @Service, @Repository -->
     <context:component-scan base-package="com.hotel.controller" />
     <context:component-scan base-package="com.hotel.service" />
@@ -26,7 +29,10 @@
             <mvc:mapping path="/admin/**" />
             <ref bean="loginInterceptor" />
         </mvc:interceptor>
-        <!-- Chặn truy cập /account/** nếu khách hàng chưa đăng nhập -->
+        <mvc:interceptor>
+            <mvc:mapping path="/admin/**" />
+            <ref bean="roleInterceptor" />
+        </mvc:interceptor>
         <mvc:interceptor>
             <mvc:mapping path="/account/**" />
             <mvc:exclude-mapping path="/account/login" />
@@ -45,16 +51,40 @@
         <property name="suffix" value=".jsp" />
     </bean>
 
-    <!-- Kết nối MySQL: sửa username/password tại đây -->
+    <!--
+        Kết nối database.
+        Đặt biến môi trường trên Render:
+          DB_URL      = jdbc:mysql://<host>:<port>/<dbname>?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
+          DB_USERNAME = <username>
+          DB_PASSWORD = <password>
+        Mặc định (local dev): localhost:3307, root, không mật khẩu.
+    -->
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <property name="driverClassName" value="com.mysql.cj.jdbc.Driver" />
-        <property name="url" value="jdbc:mysql://localhost:3307/hotel_booking_db?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh&amp;characterEncoding=UTF-8" />
-        <property name="username" value="root" />
-        <property name="password" value="" />
+        <property name="url" value="${DB_URL:jdbc:mysql://localhost:3307/hotel_booking_db?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh&amp;characterEncoding=UTF-8}" />
+        <property name="username" value="${DB_USERNAME:root}" />
+        <property name="password" value="${DB_PASSWORD:}" />
     </bean>
 
     <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
         <constructor-arg ref="dataSource" />
+    </bean>
+
+    <!-- Email (Gmail SMTP). Đặt biến môi trường MAIL_USERNAME và MAIL_PASSWORD trên Render. -->
+    <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="smtp.gmail.com" />
+        <property name="port" value="587" />
+        <property name="username" value="${MAIL_USERNAME:YOUR_EMAIL@gmail.com}" />
+        <property name="password" value="${MAIL_PASSWORD:YOUR_APP_PASSWORD}" />
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.smtp.auth">true</prop>
+                <prop key="mail.smtp.starttls.enable">true</prop>
+                <prop key="mail.smtp.connectiontimeout">5000</prop>
+                <prop key="mail.smtp.timeout">5000</prop>
+                <prop key="mail.smtp.writetimeout">5000</prop>
+            </props>
+        </property>
     </bean>
 
 </beans>

@@ -2,100 +2,154 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="pageTitle" value="Tài khoản của tôi" />
+<c:set var="solidNav" value="true" />
 <%@ include file="../layout/public-header.jsp" %>
 
-<section class="public-hero py-5">
+<%-- DASHBOARD HERO --%>
+<div class="ph-dash-hero">
     <div class="container">
-        <h1 class="h2 mb-1">Xin chào, ${customer.fullName}</h1>
-        <p class="lead mb-0">Theo dõi lịch sử đặt phòng, hóa đơn và ưu đãi của bạn</p>
+        <div class="ph-breadcrumb">
+            <a href="${pageContext.request.contextPath}/">Trang chủ</a>
+            <span>&rsaquo;</span> Tài khoản
+        </div>
+        <h2>Xin chào, ${customer.fullName}</h2>
+        <p>Quản lý lịch sử đặt phòng, hóa đơn và ưu đãi của bạn</p>
     </div>
-</section>
+</div>
 
-<div class="container my-5">
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="stat-card">
-                <div class="stat-icon stat-icon-indigo"><i class="fas fa-calendar-check"></i></div>
-                <div>
-                    <div class="stat-value">${bookings.size()}</div>
-                    <div class="stat-label">Tổng số lượt đặt phòng</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="stat-card">
-                <div class="stat-icon stat-icon-cyan"><i class="fas fa-id-card"></i></div>
-                <div>
-                    <div class="stat-value" style="font-size:1.05rem;">${customer.email}</div>
-                    <div class="stat-label">${customer.phone}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="stat-card">
-                <div class="stat-icon stat-icon-amber"><i class="fas fa-gift"></i></div>
-                <div>
-                    <div class="stat-value">${promotions.size()}</div>
-                    <div class="stat-label">Mã ưu đãi khả dụng</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <c:if test="${not empty promotions}">
-    <div class="card mb-4">
-        <div class="card-header"><i class="fas fa-gift mr-2"></i>Ưu đãi dành cho bạn</div>
-        <div class="card-body">
-            <div class="row">
-                <c:forEach var="promo" items="${promotions}">
-                    <div class="col-md-6 mb-3">
-                        <div class="promo-card p-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="promo-code">${promo.code}</span>
-                                <span class="font-weight-bold text-brand">-${promo.discountPercent}%</span>
-                            </div>
-                            <p class="text-muted mb-0 small">${promo.description}</p>
-                        </div>
+<div style="background:var(--ph-bg);padding:0 0 4rem;">
+    <div class="container">
+        <%-- STAT CARDS (overlap hero) --%>
+        <div class="row" style="margin-top:-1.5rem;margin-bottom:2.5rem;">
+            <div class="col-md-4 mb-3">
+                <div class="ph-dash-stat">
+                    <div class="ph-dash-icon gold"><i class="fas fa-calendar-check"></i></div>
+                    <div>
+                        <div class="ph-dash-stat-num">${bookings.size()}</div>
+                        <div class="ph-dash-stat-label">Tổng lượt đặt phòng</div>
                     </div>
-                </c:forEach>
+                </div>
             </div>
-            <p class="text-muted small mb-0">Nhập mã ưu đãi ở bước đặt phòng để được áp dụng giảm giá.</p>
+            <div class="col-md-4 mb-3">
+                <div class="ph-dash-stat">
+                    <div class="ph-dash-icon navy"><i class="fas fa-envelope"></i></div>
+                    <div>
+                        <div class="ph-dash-stat-num" style="font-size:1rem;font-family:Inter,sans-serif;font-weight:600;">${customer.email}</div>
+                        <div class="ph-dash-stat-label">${customer.phone}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="ph-dash-stat">
+                    <div class="ph-dash-icon green"><i class="fas fa-gift"></i></div>
+                    <div>
+                        <div class="ph-dash-stat-num">${promotions.size()}</div>
+                        <div class="ph-dash-stat-label">Mã ưu đãi khả dụng</div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-    </c:if>
 
-    <div class="card">
-        <div class="card-header"><i class="fas fa-receipt mr-2"></i>Lịch sử đặt phòng</div>
-        <div class="card-body table-responsive">
-            <table class="table table-bordered table-hover mb-0">
-                <thead>
-                <tr>
-                    <th>Mã</th><th>Phòng</th><th>Ngày nhận</th><th>Ngày trả</th><th>Trạng thái</th><th>Tổng tiền</th><th>Giảm giá</th><th></th>
-                </tr>
-                </thead>
-                <tbody>
-                <c:forEach var="b" items="${bookings}">
-                    <tr>
-                        <td>#${b.id}</td>
-                        <td>${b.roomNumber} - ${b.roomTypeName}</td>
-                        <td>${b.checkInDate}</td>
-                        <td>${b.checkOutDate}</td>
-                        <td><span class="badge badge-status-${b.status}">${b.status}</span></td>
-                        <td><fmt:formatNumber value="${b.totalAmount}" type="number" groupingUsed="true"/> VND</td>
-                        <td>
-                            <c:if test="${b.discountAmount > 0}">
-                                -<fmt:formatNumber value="${b.discountAmount}" type="number" groupingUsed="true"/> VND
-                                <span class="text-muted small">(${b.promoCode})</span>
-                            </c:if>
-                        </td>
-                        <td><a href="${pageContext.request.contextPath}/account/bookings/${b.id}" class="btn btn-sm btn-outline-primary">Chi tiết</a></td>
-                    </tr>
-                </c:forEach>
-                <c:if test="${empty bookings}">
-                    <tr><td colspan="8" class="text-center text-muted">Bạn chưa có lượt đặt phòng nào.</td></tr>
-                </c:if>
-                </tbody>
-            </table>
+        <%-- PROMOTIONS --%>
+        <c:if test="${not empty promotions}">
+        <div class="ph-table-card mb-4">
+            <div class="card-head"><i class="fas fa-gift"></i>Ưu đãi dành riêng cho bạn</div>
+            <div style="padding:1.5rem;">
+                <div class="row">
+                    <c:forEach var="promo" items="${promotions}">
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="ph-promo-chip">
+                                <div>
+                                    <div class="ph-promo-code">${promo.code}</div>
+                                    <div style="font-size:.78rem;color:var(--ph-muted);margin-top:.15rem;">${promo.description}</div>
+                                </div>
+                                <span class="ph-promo-pct">-${promo.discountPercent}%</span>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </div>
+                <p style="font-size:.8rem;color:var(--ph-muted);margin:0;margin-top:.5rem;">
+                    <i class="fas fa-info-circle mr-1" style="color:var(--ph-gold);"></i>
+                    Nhập mã ưu đãi ở bước đặt phòng để áp dụng giảm giá.
+                </p>
+            </div>
+        </div>
+        </c:if>
+
+        <%-- BOOKING HISTORY --%>
+        <div class="ph-table-card">
+            <div class="card-head d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-receipt"></i>Lịch sử đặt phòng</span>
+                <a href="${pageContext.request.contextPath}/booking/new"
+                   style="background:var(--ph-gold);color:var(--ph-dark);font-weight:700;font-size:.78rem;padding:.4rem .9rem;border-radius:4px;text-decoration:none;">
+                   <i class="fas fa-plus mr-1"></i>Đặt phòng mới
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="ph-table">
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Phòng</th>
+                            <th>Nhận phòng</th>
+                            <th>Trả phòng</th>
+                            <th>Trạng thái</th>
+                            <th>Tổng tiền</th>
+                            <th>Giảm giá</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="b" items="${bookings}">
+                            <tr>
+                                <td style="font-weight:600;color:var(--ph-dark);">#${b.id}</td>
+                                <td>
+                                    <div style="font-weight:600;color:var(--ph-dark);">${b.roomNumber}</div>
+                                    <div style="font-size:.78rem;color:var(--ph-muted);">${b.roomTypeName}</div>
+                                </td>
+                                <td>${b.checkInDate}</td>
+                                <td>${b.checkOutDate}</td>
+                                <td><span class="status-badge status-${b.status}">${b.status}</span></td>
+                                <td style="font-weight:600;">
+                                    <fmt:formatNumber value="${b.totalAmount}" type="number" groupingUsed="true"/>
+                                    <span style="font-size:.75rem;color:var(--ph-muted);">VND</span>
+                                </td>
+                                <td>
+                                    <c:if test="${b.discountAmount > 0}">
+                                        <span style="color:#065f46;font-weight:600;">
+                                            -<fmt:formatNumber value="${b.discountAmount}" type="number" groupingUsed="true"/> VND
+                                        </span>
+                                        <div style="font-size:.72rem;color:var(--ph-muted);">${b.promoCode}</div>
+                                    </c:if>
+                                    <c:if test="${b.discountAmount == 0}">—</c:if>
+                                </td>
+                                <td>
+                                    <a href="${pageContext.request.contextPath}/account/bookings/${b.id}"
+                                       class="btn btn-outline-primary btn-sm" style="font-size:.78rem;white-space:nowrap;">
+                                       Chi tiết <i class="fas fa-chevron-right" style="font-size:.65rem;"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                        <c:if test="${empty bookings}">
+                            <tr>
+                                <td colspan="8" style="text-align:center;padding:3rem;color:var(--ph-muted);">
+                                    <i class="fas fa-calendar-times" style="font-size:2rem;color:var(--ph-border);display:block;margin-bottom:.75rem;"></i>
+                                    Bạn chưa có lượt đặt phòng nào.
+                                    <br><a href="${pageContext.request.contextPath}/booking/new" style="color:var(--ph-gold);font-weight:600;margin-top:.5rem;display:inline-block;">Đặt phòng ngay</a>
+                                </td>
+                            </tr>
+                        </c:if>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="margin-top:1.5rem;text-align:center;">
+            <a href="${pageContext.request.contextPath}/account/logout"
+               style="font-size:.85rem;color:var(--ph-muted);text-decoration:none;">
+               <i class="fas fa-sign-out-alt mr-1"></i>Đăng xuất tài khoản
+            </a>
         </div>
     </div>
 </div>
