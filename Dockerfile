@@ -18,7 +18,7 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 
 # setenv.sh: chuyển Render env vars thành Java system properties
 COPY setenv.sh /usr/local/tomcat/bin/setenv.sh
-RUN chmod +x /usr/local/tomcat/bin/setenv.sh
+RUN sed -i 's/\r//' /usr/local/tomcat/bin/setenv.sh && chmod +x /usr/local/tomcat/bin/setenv.sh
 
 # Deploy WAR thành ROOT (app chạy ở /, không cần /HotelBookingManagementSystem/)
 COPY --from=build /app/target/HotelBookingManagementSystem.war /usr/local/tomcat/webapps/ROOT.war
