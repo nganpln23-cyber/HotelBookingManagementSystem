@@ -170,6 +170,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="${pageContext.request.contextPath}/admin/reports/occupancy"
+                       class="nav-link ${uri.contains('/admin/reports/occupancy') ? 'active' : ''}">
+                        <i class="nav-icon fas fa-hotel"></i><p>Tỷ lệ lấp đầy</p>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="${pageContext.request.contextPath}/admin/reports/top-customers"
                        class="nav-link ${uri.contains('/admin/reports/top-customers') ? 'active' : ''}">
                         <i class="nav-icon fas fa-trophy"></i><p>Top khách hàng</p>

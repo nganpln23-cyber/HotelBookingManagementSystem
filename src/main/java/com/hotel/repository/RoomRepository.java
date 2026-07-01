@@ -65,14 +65,20 @@ public class RoomRepository {
     }
 
     public List<Room> findAvailable() {
-        return jdbcTemplate.query(JOIN_SQL + "WHERE r.status='AVAILABLE' ORDER BY r.room_number", mapper);
+        return jdbcTemplate.query(
+            JOIN_SQL +
+            "WHERE r.status='AVAILABLE' AND r.id NOT IN (" +
+            "  SELECT room_id FROM bookings WHERE status IN ('AWAITING_PAYMENT','PENDING','CONFIRMED','CHECKED_IN')" +
+            "  AND check_out_date > CURDATE()" +
+            ") ORDER BY r.room_number",
+            mapper);
     }
 
     public List<Room> findAvailableForDates(LocalDate checkIn, LocalDate checkOut) {
         return jdbcTemplate.query(
             JOIN_SQL +
             "WHERE r.status != 'MAINTENANCE' AND r.id NOT IN (" +
-            "  SELECT room_id FROM bookings WHERE status IN ('PENDING','CONFIRMED','CHECKED_IN') " +
+            "  SELECT room_id FROM bookings WHERE status IN ('AWAITING_PAYMENT','PENDING','CONFIRMED','CHECKED_IN') " +
             "  AND check_in_date < ? AND check_out_date > ?" +
             ") ORDER BY r.room_number",
             mapper, Date.valueOf(checkOut), Date.valueOf(checkIn));
@@ -100,5 +106,11 @@ public class RoomRepository {
 
     public void delete(Integer id) {
         jdbcTemplate.update("DELETE FROM rooms WHERE id=?", id);
+    }
+
+    public int countTotalActiveRooms() {
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM rooms WHERE status != 'MAINTENANCE'", Integer.class);
+        return count != null ? count : 0;
     }
 }

@@ -37,6 +37,12 @@
                 <div class="form-group col-auto mb-0">
                     <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter mr-1"></i>Lọc</button>
                 </div>
+                <div class="form-group col-auto mb-0 ml-auto">
+                    <a href="${pageContext.request.contextPath}/admin/reports/revenue/export?format=xlsx&tab=daily&from=${report.from}&to=${report.to}"
+                       class="btn btn-success btn-sm"><i class="fas fa-file-excel mr-1"></i>Excel</a>
+                    <a href="${pageContext.request.contextPath}/admin/reports/revenue/export?format=pdf&tab=daily&from=${report.from}&to=${report.to}"
+                       class="btn btn-danger btn-sm ml-1"><i class="fas fa-file-pdf mr-1"></i>PDF</a>
+                </div>
             </form>
         </div>
     </div>
@@ -181,6 +187,12 @@
                 <div class="form-group col-auto mb-0">
                     <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter mr-1"></i>Lọc</button>
                 </div>
+                <div class="form-group col-auto mb-0 ml-auto">
+                    <a href="${pageContext.request.contextPath}/admin/reports/revenue/export?format=xlsx&tab=monthly&year=${selectedYear}"
+                       class="btn btn-success btn-sm"><i class="fas fa-file-excel mr-1"></i>Excel</a>
+                    <a href="${pageContext.request.contextPath}/admin/reports/revenue/export?format=pdf&tab=monthly&year=${selectedYear}"
+                       class="btn btn-danger btn-sm ml-1"><i class="fas fa-file-pdf mr-1"></i>PDF</a>
+                </div>
             </form>
         </div>
     </div>
@@ -289,6 +301,12 @@
 
 <%-- ─── TAB: YEARLY ────────────────────────────── --%>
 <c:if test="${tab == 'yearly'}">
+    <div class="mb-3 text-right">
+        <a href="${pageContext.request.contextPath}/admin/reports/revenue/export?format=xlsx&tab=yearly"
+           class="btn btn-success btn-sm"><i class="fas fa-file-excel mr-1"></i>Excel</a>
+        <a href="${pageContext.request.contextPath}/admin/reports/revenue/export?format=pdf&tab=yearly"
+           class="btn btn-danger btn-sm ml-1"><i class="fas fa-file-pdf mr-1"></i>PDF</a>
+    </div>
     <div class="card mb-4">
         <div class="card-header">
             <i class="fas fa-chart-bar text-brand"></i> Doanh thu theo năm (tổng hợp)
@@ -384,6 +402,12 @@
                 </div>
                 <div class="form-group col-auto mb-0">
                     <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter mr-1"></i>Lọc</button>
+                </div>
+                <div class="form-group col-auto mb-0 ml-auto">
+                    <a href="${pageContext.request.contextPath}/admin/reports/revenue/export?format=xlsx&tab=quarterly&year=${selectedYear}"
+                       class="btn btn-success btn-sm"><i class="fas fa-file-excel mr-1"></i>Excel</a>
+                    <a href="${pageContext.request.contextPath}/admin/reports/revenue/export?format=pdf&tab=quarterly&year=${selectedYear}"
+                       class="btn btn-danger btn-sm ml-1"><i class="fas fa-file-pdf mr-1"></i>PDF</a>
                 </div>
             </form>
         </div>

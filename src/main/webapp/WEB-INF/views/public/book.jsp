@@ -88,15 +88,17 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label>Số điện thoại <span style="color:#dc2626;">*</span></label>
-                                    <input class="form-control" name="phone" value="${bookingForm.phone}" placeholder="0912 345 678" required>
+                                    <input class="form-control" type="tel" name="phone" value="${bookingForm.phone}" placeholder="0912345678"
+                                           pattern="[0-9]{9,11}" title="Chỉ nhập số, 9-11 chữ số"
+                                           oninput="this.value=this.value.replace(/[^0-9]/g,'')" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label>Email</label>
-                                    <input class="form-control" type="email" name="email" value="${bookingForm.email}" placeholder="email@example.com">
+                                    <label>Email <span style="color:#dc2626;">*</span></label>
+                                    <input class="form-control" type="email" name="email" value="${bookingForm.email}" placeholder="email@example.com" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label>CCCD / Passport</label>
-                                    <input class="form-control" name="identityNumber" value="${bookingForm.identityNumber}" placeholder="012345678901">
+                                    <label>CCCD / Passport <span style="color:#dc2626;">*</span></label>
+                                    <input class="form-control" name="identityNumber" value="${bookingForm.identityNumber}" placeholder="012345678901" required>
                                 </div>
                                 <div class="col-12 mb-0">
                                     <label>Địa chỉ</label>

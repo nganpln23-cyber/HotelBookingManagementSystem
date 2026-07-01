@@ -23,7 +23,9 @@
                 </div>
                 <div class="col-md-6" style="margin-bottom:1rem;">
                     <label>Số điện thoại <span style="color:#dc2626;">*</span></label>
-                    <input class="ph-input" name="phone" value="${customer.phone}" placeholder="0912 345 678" required>
+                    <input class="ph-input" type="tel" name="phone" value="${customer.phone}" placeholder="0912345678"
+                           pattern="[0-9]{9,11}" title="Chỉ nhập số, 9-11 chữ số"
+                           oninput="this.value=this.value.replace(/[^0-9]/g,'')" required>
                 </div>
             </div>
             <div style="margin-bottom:1rem;">

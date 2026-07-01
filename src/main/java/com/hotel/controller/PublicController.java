@@ -55,11 +55,13 @@ public class PublicController {
                          @RequestParam(name = "roomTypeId", required = false) Integer roomTypeId,
                          Model model) {
         List<Room> rooms;
-        if (checkIn != null && checkOut != null && checkOut.isAfter(checkIn)) {
+        boolean datesProvided = checkIn != null && checkOut != null && checkOut.isAfter(checkIn);
+        if (datesProvided) {
             rooms = roomService.findAvailableForDates(checkIn, checkOut);
         } else {
-            rooms = roomService.findAvailable();
+            rooms = List.of();
         }
+        model.addAttribute("datesProvided", datesProvided);
         if (roomTypeId != null) {
             rooms = rooms.stream().filter(r -> roomTypeId.equals(r.getRoomTypeId())).collect(Collectors.toList());
         }
@@ -94,7 +96,10 @@ public class PublicController {
 
         model.addAttribute("bookingForm", form);
         model.addAttribute("currentCustomer", currentCustomer);
-        model.addAttribute("rooms", roomService.findAvailable());
+        List<Room> availableRooms = (checkIn != null && checkOut != null && checkOut.isAfter(checkIn))
+                ? roomService.findAvailableForDates(checkIn, checkOut)
+                : roomService.findAvailable();
+        model.addAttribute("rooms", availableRooms);
         if (roomId != null) {
             model.addAttribute("selectedRoom", roomService.findById(roomId));
         }
@@ -129,7 +134,12 @@ public class PublicController {
             model.addAttribute("error", ex.getMessage());
             model.addAttribute("bookingForm", bookingForm);
             model.addAttribute("currentCustomer", currentCustomer);
-            model.addAttribute("rooms", roomService.findAvailable());
+            LocalDate ci = bookingForm.getCheckInDate();
+            LocalDate co = bookingForm.getCheckOutDate();
+            List<Room> availRooms = (ci != null && co != null && co.isAfter(ci))
+                    ? roomService.findAvailableForDates(ci, co)
+                    : roomService.findAvailable();
+            model.addAttribute("rooms", availRooms);
             if (bookingForm.getRoomId() != null) {
                 model.addAttribute("selectedRoom", roomService.findById(bookingForm.getRoomId()));
             }

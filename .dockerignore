@@ -1,0 +1,13 @@
+.git
+.gitignore
+.tomcat
+target
+*.bat
+*.md
+e2e
+node_modules
+package*.json
+playwright.config.js
+test-results
+docker-compose.yml
+.dockerignore

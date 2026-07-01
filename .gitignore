@@ -43,9 +43,15 @@ local.properties
 # Node (if any)
 node_modules/
 
-# Playwright E2E artifacts
-e2e/test-results/
-e2e/playwright-report/
+# Playwright / E2E tests (local only)
+e2e/
+test-results/
+package.json
+package-lock.json
+playwright.config.js
+
+# Local dev scripts
+start-tomcat.bat
 
 # Temporary files
 *.tmp

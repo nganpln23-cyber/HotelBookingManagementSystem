@@ -1,11 +1,13 @@
 package com.hotel.service;
 
 import com.hotel.model.MonthlyRevenue;
+import com.hotel.model.OccupancyData;
 import com.hotel.model.QuarterlyRevenue;
 import com.hotel.model.RevenueReport;
 import com.hotel.model.TopCustomer;
 import com.hotel.model.YearlyRevenue;
 import com.hotel.repository.PaymentRepository;
+import com.hotel.repository.RoomRepository;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -15,9 +17,11 @@ import java.util.List;
 @Service
 public class ReportService {
     private final PaymentRepository paymentRepository;
+    private final RoomRepository roomRepository;
 
-    public ReportService(PaymentRepository paymentRepository) {
+    public ReportService(PaymentRepository paymentRepository, RoomRepository roomRepository) {
         this.paymentRepository = paymentRepository;
+        this.roomRepository = roomRepository;
     }
 
     public RevenueReport getRevenueReport(LocalDate from, LocalDate to) {
@@ -47,5 +51,20 @@ public class ReportService {
 
     public List<TopCustomer> getTopCustomers(int limit) {
         return paymentRepository.getTopCustomers(limit);
+    }
+
+    public List<OccupancyData> getMonthlyOccupancy(int year) {
+        int totalRooms = roomRepository.countTotalActiveRooms();
+        return paymentRepository.getMonthlyOccupancy(year, totalRooms);
+    }
+
+    public List<OccupancyData> getQuarterlyOccupancy(int year) {
+        int totalRooms = roomRepository.countTotalActiveRooms();
+        return paymentRepository.getQuarterlyOccupancy(year, totalRooms);
+    }
+
+    public List<OccupancyData> getYearlyOccupancy() {
+        int totalRooms = roomRepository.countTotalActiveRooms();
+        return paymentRepository.getYearlyOccupancy(totalRooms);
     }
 }

@@ -70,16 +70,20 @@
         <constructor-arg ref="dataSource" />
     </bean>
 
-    <!-- Email (Gmail SMTP). Đặt biến môi trường MAIL_USERNAME và MAIL_PASSWORD trên Render. -->
+    <!--
+        Email (Gmail SMTP). Đặt biến môi trường MAIL_USERNAME và MAIL_PASSWORD.
+        Nếu không đặt (local dev / test), EmailService sẽ bỏ qua gửi email (mailSender = null).
+    -->
     <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
-        <property name="host" value="smtp.gmail.com" />
-        <property name="port" value="587" />
-        <property name="username" value="${MAIL_USERNAME:YOUR_EMAIL@gmail.com}" />
-        <property name="password" value="${MAIL_PASSWORD:YOUR_APP_PASSWORD}" />
+        <property name="host" value="${MAIL_HOST:smtp.gmail.com}" />
+        <property name="port" value="${MAIL_PORT:587}" />
+        <property name="username" value="${MAIL_USERNAME:}" />
+        <property name="password" value="${MAIL_PASSWORD:}" />
         <property name="javaMailProperties">
             <props>
                 <prop key="mail.smtp.auth">true</prop>
                 <prop key="mail.smtp.starttls.enable">true</prop>
+                <prop key="mail.smtp.ssl.trust">smtp.gmail.com</prop>
                 <prop key="mail.smtp.connectiontimeout">5000</prop>
                 <prop key="mail.smtp.timeout">5000</prop>
                 <prop key="mail.smtp.writetimeout">5000</prop>

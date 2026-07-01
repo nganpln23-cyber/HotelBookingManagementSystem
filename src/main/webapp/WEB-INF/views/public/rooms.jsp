@@ -70,7 +70,7 @@
                     </c:when>
                     <c:otherwise>
                         <h4 style="font-family:'Playfair Display',serif;color:var(--ph-dark);font-weight:700;margin:0;">
-                            Danh sách phòng trống
+                            Chọn ngày để xem phòng trống
                         </h4>
                     </c:otherwise>
                 </c:choose>
@@ -80,11 +80,18 @@
             </div>
         </div>
 
-        <c:if test="${empty rooms}">
-            <div class="ph-alert ph-alert-warning">
-                <i class="fas fa-info-circle mr-2"></i>Không tìm thấy phòng phù hợp. Vui lòng thử ngày hoặc loại phòng khác.
-            </div>
-        </c:if>
+        <c:choose>
+            <c:when test="${not datesProvided}">
+                <div class="ph-alert ph-alert-warning">
+                    <i class="fas fa-calendar-alt mr-2"></i>Vui lòng chọn <strong>ngày nhận phòng</strong> và <strong>ngày trả phòng</strong> để xem phòng còn trống.
+                </div>
+            </c:when>
+            <c:when test="${empty rooms}">
+                <div class="ph-alert ph-alert-warning">
+                    <i class="fas fa-info-circle mr-2"></i>Không có phòng trống cho khoảng thời gian đã chọn. Vui lòng thử ngày khác.
+                </div>
+            </c:when>
+        </c:choose>
 
         <div class="row">
             <c:forEach var="r" items="${rooms}">

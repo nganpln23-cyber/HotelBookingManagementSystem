@@ -4,13 +4,19 @@
 <c:set var="pageTitle" value="Top khách hàng" />
 <%@ include file="../layout/header.jsp" %>
 
-<div class="row mb-3">
+<div class="row mb-3 align-items-center">
     <div class="col-auto">
         <div class="btn-group">
             <a href="?limit=5"  class="btn btn-sm ${limit == 5  ? 'btn-primary' : 'btn-outline-primary'}">Top 5</a>
             <a href="?limit=10" class="btn btn-sm ${limit == 10 ? 'btn-primary' : 'btn-outline-primary'}">Top 10</a>
             <a href="?limit=20" class="btn btn-sm ${limit == 20 ? 'btn-primary' : 'btn-outline-primary'}">Top 20</a>
         </div>
+    </div>
+    <div class="col-auto ml-auto">
+        <a href="${pageContext.request.contextPath}/admin/reports/top-customers/export?format=xlsx&limit=${limit}"
+           class="btn btn-success btn-sm"><i class="fas fa-file-excel mr-1"></i>Excel</a>
+        <a href="${pageContext.request.contextPath}/admin/reports/top-customers/export?format=pdf&limit=${limit}"
+           class="btn btn-danger btn-sm ml-1"><i class="fas fa-file-pdf mr-1"></i>PDF</a>
     </div>
 </div>
 

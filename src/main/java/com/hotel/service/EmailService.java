@@ -3,6 +3,7 @@ package com.hotel.service;
 import com.hotel.model.Booking;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +16,39 @@ import java.util.Locale;
 public class EmailService {
 
     @Autowired(required = false)
+    private JavaMailSenderImpl mailSenderImpl;
+
     private JavaMailSender mailSender;
+
+    @jakarta.annotation.PostConstruct
+    private void init() {
+        if (mailSenderImpl != null) {
+            String user = mailSenderImpl.getUsername();
+            if (user != null && !user.isBlank()) {
+                mailSender = mailSenderImpl;
+            }
+        }
+    }
 
     private static final String FROM = "Grand Beach Hotel <noreply@grandbeach.vn>";
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final NumberFormat NUM_FMT = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
+
+    public String sendTestEmail(String toEmail) {
+        if (mailSender == null) return "FAIL: mailSender bean is null (SMTP not configured)";
+        try {
+            MimeMessage msg = mailSender.createMimeMessage();
+            MimeMessageHelper h = new MimeMessageHelper(msg, true, "UTF-8");
+            h.setFrom(FROM);
+            h.setTo(toEmail);
+            h.setSubject("Grand Beach Hotel – Test email");
+            h.setText("<p>Email test thành công! SMTP đang hoạt động.</p>", true);
+            mailSender.send(msg);
+            return "OK: email sent to " + toEmail;
+        } catch (Exception e) {
+            return "FAIL: " + e.getMessage();
+        }
+    }
 
     public void sendPaymentReceived(String toEmail, String name, Booking b) {
         if (mailSender == null || toEmail == null || toEmail.isBlank()) return;

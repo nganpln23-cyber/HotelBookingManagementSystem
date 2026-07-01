@@ -2,6 +2,7 @@ package com.hotel.repository;
 
 import com.hotel.model.DailyRevenue;
 import com.hotel.model.MonthlyRevenue;
+import com.hotel.model.OccupancyData;
 import com.hotel.model.Payment;
 import com.hotel.model.QuarterlyRevenue;
 import com.hotel.model.RoomTypeRevenue;
@@ -13,7 +14,11 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class PaymentRepository {
@@ -164,6 +169,100 @@ public class PaymentRepository {
                 t.setLastBookingDate(rs.getString("last_booking"));
                 return t;
             }, limit);
+    }
+
+    // ─── OCCUPANCY QUERIES ───────────────────────────────────────────────────
+
+    public List<OccupancyData> getMonthlyOccupancy(int year, int totalRooms) {
+        String sql =
+            "SELECT MONTH(check_in_date) AS mo, " +
+            "SUM(DATEDIFF(check_out_date, check_in_date)) AS occupied_nights, " +
+            "COUNT(*) AS booking_count " +
+            "FROM bookings WHERE status IN ('CONFIRMED','CHECKED_IN','CHECKED_OUT') " +
+            "AND YEAR(check_in_date) = ? " +
+            "GROUP BY MONTH(check_in_date) ORDER BY mo";
+
+        Map<Integer, int[]> rawMap = new HashMap<>();
+        jdbcTemplate.query(sql, rs -> {
+            rawMap.put(rs.getInt("mo"), new int[]{rs.getInt("occupied_nights"), rs.getInt("booking_count")});
+        }, year);
+
+        List<OccupancyData> result = new ArrayList<>();
+        String[] monthNames = {"", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+                "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"};
+        for (int m = 1; m <= 12; m++) {
+            int daysInMonth = YearMonth.of(year, m).lengthOfMonth();
+            int availableNights = totalRooms * daysInMonth;
+            int[] raw = rawMap.getOrDefault(m, new int[]{0, 0});
+            OccupancyData d = new OccupancyData();
+            d.setPeriod(m);
+            d.setLabel(monthNames[m]);
+            d.setTotalRooms(totalRooms);
+            d.setAvailableNights(availableNights);
+            d.setOccupiedNights(raw[0]);
+            d.setBookingCount(raw[1]);
+            d.setOccupancyRate(availableNights > 0 ? raw[0] * 100.0 / availableNights : 0);
+            result.add(d);
+        }
+        return result;
+    }
+
+    public List<OccupancyData> getQuarterlyOccupancy(int year, int totalRooms) {
+        String sql =
+            "SELECT QUARTER(check_in_date) AS qtr, " +
+            "SUM(DATEDIFF(check_out_date, check_in_date)) AS occupied_nights, " +
+            "COUNT(*) AS booking_count " +
+            "FROM bookings WHERE status IN ('CONFIRMED','CHECKED_IN','CHECKED_OUT') " +
+            "AND YEAR(check_in_date) = ? " +
+            "GROUP BY QUARTER(check_in_date) ORDER BY qtr";
+
+        Map<Integer, int[]> rawMap = new HashMap<>();
+        jdbcTemplate.query(sql, rs -> {
+            rawMap.put(rs.getInt("qtr"), new int[]{rs.getInt("occupied_nights"), rs.getInt("booking_count")});
+        }, year);
+
+        List<OccupancyData> result = new ArrayList<>();
+        int[] quarterDays = {0, 90, 91, 92, 92}; // approximate days per quarter
+        for (int q = 1; q <= 4; q++) {
+            int daysInQuarter = quarterDays[q];
+            int availableNights = totalRooms * daysInQuarter;
+            int[] raw = rawMap.getOrDefault(q, new int[]{0, 0});
+            OccupancyData d = new OccupancyData();
+            d.setPeriod(q);
+            d.setLabel("Quý " + q);
+            d.setTotalRooms(totalRooms);
+            d.setAvailableNights(availableNights);
+            d.setOccupiedNights(raw[0]);
+            d.setBookingCount(raw[1]);
+            d.setOccupancyRate(availableNights > 0 ? raw[0] * 100.0 / availableNights : 0);
+            result.add(d);
+        }
+        return result;
+    }
+
+    public List<OccupancyData> getYearlyOccupancy(int totalRooms) {
+        String sql =
+            "SELECT YEAR(check_in_date) AS yr, " +
+            "SUM(DATEDIFF(check_out_date, check_in_date)) AS occupied_nights, " +
+            "COUNT(*) AS booking_count " +
+            "FROM bookings WHERE status IN ('CONFIRMED','CHECKED_IN','CHECKED_OUT') " +
+            "GROUP BY YEAR(check_in_date) ORDER BY yr";
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            int yr = rs.getInt("yr");
+            int occupiedNights = rs.getInt("occupied_nights");
+            int daysInYear = java.time.Year.of(yr).isLeap() ? 366 : 365;
+            int availableNights = totalRooms * daysInYear;
+            OccupancyData d = new OccupancyData();
+            d.setPeriod(yr);
+            d.setLabel(String.valueOf(yr));
+            d.setTotalRooms(totalRooms);
+            d.setAvailableNights(availableNights);
+            d.setOccupiedNights(occupiedNights);
+            d.setBookingCount(rs.getInt("booking_count"));
+            d.setOccupancyRate(availableNights > 0 ? occupiedNights * 100.0 / availableNights : 0);
+            return d;
+        });
     }
 
     public List<RoomTypeRevenue> getRevenueByRoomType(Timestamp from, Timestamp to) {

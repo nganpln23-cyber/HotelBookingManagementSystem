@@ -3,6 +3,7 @@ services:
     name: hotel-booking-system
     runtime: docker
     plan: free
+    port: 8080
     healthCheckPath: /
     envVars:
       - key: DB_URL
